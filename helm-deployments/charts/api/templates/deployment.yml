@@ -1,0 +1,83 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-{{ .Values.name }}
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  selector:
+    matchLabels:
+      app: api-{{ .Values.name }}
+  template:
+    metadata:
+      labels:
+        app: api-{{ .Values.name }}
+      annotations:
+        rollme: {{ randAlphaNum 5 | quote }}
+    spec:
+      {{ if .Values.global.autoscaling }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - api-{{ .Values.name }}
+                topologyKey: topology.kubernetes.io/zone
+      {{ end }}
+      containers:
+        - name: api
+          image: {{ required "A custom image is required" (tpl .Values.image .) }}
+          imagePullPolicy: Always
+          command:
+            - "/bin/sh"
+            - "-c"
+          args:
+            {{ range .Values.arguments }}
+            - {{ . }}
+            {{ end }}
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: s3-credentials
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: s3-credentials
+                  key: AWS_SECRET_ACCESS_KEY
+            {{ if (gt (len $.Values.global.env_vars) 0) }}
+            {{ range .Values.global.env_vars }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{ end }}
+            {{ end }}
+            {{ if (gt (len $.Values.global.secrets) 0) }}
+            {{ range .Values.secrets }}
+            - name: {{ .name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .secret }}
+                  key: {{ .key }}
+            {{ end }}
+            {{ end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.port }}
+              protocol: TCP
+          resources:
+            limits:
+              memory: {{ .Values.memory | quote }}
+              cpu: {{ .Values.cpu | quote }}
+              {{- if .Values.attach_gpu }}
+              nvidia.com/gpu: "1"
+              {{- end }}
+            requests:
+              memory: {{ .Values.memory | quote }}
+              cpu: {{ divf (.Values.cpu | float64) 2.0 | quote }}

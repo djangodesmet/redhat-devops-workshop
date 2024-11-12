@@ -1,0 +1,38 @@
+kind: VirtualService
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: streamlit-virtualservice-manual
+  labels:
+    app: streamlit-devops-course
+spec:
+  gateways:
+    - gui-gateway
+  hosts:
+    - # TODO: url
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: streamlit-service-manual
+            port:
+              number: 8080
+      timeout: 30s
+      corsPolicy:
+        allowOrigins:
+          []
+        allowMethods:
+          - POST
+          - GET
+          - PUT
+          - DELETE
+          - OPTIONS
+          - HEAD
+          - CONNECT
+          - PATCH
+        allowCredentials: true
+        allowHeaders:
+          - Content-Type
+          - Authorization
+        maxAge: "24h"

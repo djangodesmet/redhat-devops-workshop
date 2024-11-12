@@ -1,0 +1,105 @@
+variables:
+  NAMESPACE: p-devops-workshop
+  API_APP_NAME_CI: devops-course-api
+  STREAMLIT_APP_NAME_CI: devops-course-streamlit
+  HELM_RELEASE_NAME_CI: devops-workshop
+
+include:
+  - project: "aap/gitlab-ci"
+    file: "alpha/jobs/build.yaml"
+  - project: "aap/gitlab-ci"
+    file: "gitlab-ci-jobs/deploy_jobs.yaml"
+  - "/gitlab-cicd/helm_deployment.yaml"
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+stages:
+  - code-check
+  - test
+  - build
+  - deploy
+  - e2e
+  - cleanup
+
+ruff:
+  stage: code-check
+  image: # TODO: image
+  script:
+    - grep "ruff==" requirements.txt | xargs pip install
+    - ruff check .
+
+unit-test:
+  stage: test
+  image: # TODO: image
+  script:
+    - grep -E "pytest==|fastapi==|huggingface-hub==" requirements.txt | xargs pip install
+    - pytest
+
+build-api-image:
+  stage: build
+  needs: []
+  extends: .build_image
+  variables:
+      DOCKERFILE_PATH: ${CI_PROJECT_DIR}/api/Dockerfile
+      IMAGE_REPOSITORY: ${NAMESPACE}/${API_APP_NAME_CI}
+      COMMIT_SHA_TAG: ${CI_COMMIT_REF_NAME}-latest  
+
+build-streamlit-image:
+  stage: build
+  needs: []
+  extends: .build_image
+  variables:
+      DOCKERFILE_PATH: ${CI_PROJECT_DIR}/streamlit/Dockerfile
+      IMAGE_REPOSITORY: ${NAMESPACE}/${STREAMLIT_APP_NAME_CI}
+      COMMIT_SHA_TAG: ${CI_COMMIT_REF_NAME}-latest  
+
+deploy-on-aap:
+  stage: deploy
+  needs: [build-streamlit-image, build-api-image]
+  extends: 
+    - .deploy_on_aap
+    - .helm_deployment
+  image: # TODO: image
+  variables:
+    AAP_NAMESPACE: ${NAMESPACE}
+    IMAGE_TAG: ${CI_COMMIT_REF_NAME}-latest
+    HELM_RELEASE_NAME: ${HELM_RELEASE_NAME_CI}
+    API_APP_NAME: ${API_APP_NAME_CI}
+    STREAMLIT_APP_NAME: ${STREAMLIT_APP_NAME_CI}
+
+test-api:
+  stage: e2e
+  needs: [deploy-on-aap]
+  image: # TODO: image
+  script:  
+    - sleep 60
+    - grep "python-aapy==" ./api/requirements.txt | xargs pip install
+    - PYTHONPATH=. python ./api/call_endpoint.py --local=False
+  variables:        
+    API_APP_NAME: ${API_APP_NAME_CI}
+    STREAMLIT_APP_NAME: ${STREAMLIT_APP_NAME_CI}
+    PLATFORM: AAP-POD
+  
+cleanup:
+  stage: cleanup
+  needs: [test-api]
+  extends: .deploy_on_aap
+  image: # TODO: image
+  script:
+    - helm uninstall ${HELM_RELEASE_NAME} -n ${NAMESPACE}
+  variables:
+    AAP_NAMESPACE: ${NAMESPACE} 
+    HELM_RELEASE_NAME: ${HELM_RELEASE_NAME_CI}
+    API_APP_NAME: ${API_APP_NAME_CI}
+    STREAMLIT_APP_NAME: ${STREAMLIT_APP_NAME_CI}
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: always
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: never

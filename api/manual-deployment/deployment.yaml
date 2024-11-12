@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-course-api-manual
+  labels:
+    app: api-devops-course
+spec:
+  selector:
+    matchLabels:
+      app: api-devops-course
+  template:
+    metadata:
+      labels:
+        app: api-devops-course
+    spec:
+      containers:
+      - name: api
+        image: # TODO: image
+        command:
+          - "/bin/sh"
+          - "-c"
+        args:
+          - . # TODO: path to download model script;
+            # TODO: path to api.py script
+        resources:
+          limits:
+            memory: "3Gi"
+            cpu: "1"
+        ports:
+          - containerPort: 9000
+        env:
+          - name: AWS_ACCESS_KEY_ID # TODO: check if these env variables are correct
+            valueFrom:
+              secretKeyRef:
+                name: s3-credentials
+                key: AWS_ACCESS_KEY_ID
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: s3-credentials
+                key: AWS_SECRET_ACCESS_KEY
+          - name: NAMESPACE
+            value: p-devops-workshop

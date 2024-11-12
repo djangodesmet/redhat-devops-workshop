@@ -1,0 +1,161 @@
+variables:
+  NAMESPACE: p-devops-workshop
+  API_APP_NAME_CI: devops-course-api
+  STREAMLIT_APP_NAME_CI: devops-course-streamlit
+  HELM_RELEASE_NAME_CI: devops-workshop
+
+include:
+  - project: "aap/gitlab-ci"
+    file: "gitlab-ci-jobs/proxy_template.yaml"
+  - project: "aap/gitlab-ci"
+    file: "alpha/jobs/build.yaml"
+  - project: "aap/gitlab-ci"
+    file: "gitlab-ci-jobs/deploy_jobs.yaml"
+  - "/gitlab-cicd/helm_deployment.yaml"
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+stages:
+  - code-check
+  - test
+  - build
+  - deploy
+  - e2e
+  - cleanup
+
+ruff:
+  stage: code-check
+  needs: []
+  extends: .proxy
+  image: # TODO: image
+  script:
+    - grep "ruff==" requirements.txt | xargs pip install
+    - ruff check .
+    - ruff format --check .
+
+unit-test:
+  stage: test
+  needs: [ruff]
+  extends: .proxy
+  image: # TODO: image
+  script:
+    - grep -E "pytest==|fastapi==|huggingface-hub==" requirements.txt | xargs pip install
+    - pytest
+
+build-api-image:
+  stage: build
+  needs: [unit-test]
+  extends: .build_image
+  before_script:
+    - COMMIT_SHA_TAG=$(echo ${COMMIT_SHA_TAG} | sed 's/[^a-zA-Z0-9\-]/-/g')
+  variables:
+      # required in .build_image
+      DOCKERFILE_PATH: ${CI_PROJECT_DIR}/api/Dockerfile
+      IMAGE_REPOSITORY: ${NAMESPACE}/${API_APP_NAME}
+      KANIKO_CACHE_REPO: # TODO: cache
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      variables:
+        # COMMIT_SHA_TAG is used as IMAGE_TAG in .build_image
+        COMMIT_SHA_TAG: ${CI_COMMIT_REF_NAME}-latest  
+        API_APP_NAME: ${API_APP_NAME_CI}-testing 
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      variables:
+        COMMIT_SHA_TAG: latest
+        API_APP_NAME: ${API_APP_NAME_CI}
+
+build-streamlit-image:
+  stage: build
+  needs: [unit-test]
+  extends: .build_image
+  before_script:
+    - COMMIT_SHA_TAG=$(echo ${COMMIT_SHA_TAG} | sed 's/[^a-zA-Z0-9\-]/-/g')
+  variables:
+      # required in .build_image
+      DOCKERFILE_PATH: ${CI_PROJECT_DIR}/streamlit/Dockerfile
+      IMAGE_REPOSITORY: ${NAMESPACE}/${STREAMLIT_APP_NAME}
+      KANIKO_CACHE_REPO: # TODO: cache
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      variables:
+        # COMMIT_SHA_TAG is used as IMAGE_TAG in .build_image
+        COMMIT_SHA_TAG: ${CI_COMMIT_REF_NAME}-latest
+        STREAMLIT_APP_NAME: ${STREAMLIT_APP_NAME_CI}-testing   
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      variables:
+        COMMIT_SHA_TAG: latest
+        STREAMLIT_APP_NAME: ${STREAMLIT_APP_NAME_CI}
+
+deploy-on-aap:
+  stage: deploy
+  needs: [build-streamlit-image, build-api-image]
+  extends: 
+    - .deploy_on_aap
+    - .helm_deployment
+  image: # TODO: image
+  variables:
+    # required in .deploy_on_aap
+    AAP_NAMESPACE: ${NAMESPACE}
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      variables:
+        IMAGE_TAG: ${CI_COMMIT_REF_NAME}-latest
+        HELM_RELEASE_NAME: ${HELM_RELEASE_NAME_CI}-testing
+        API_APP_NAME: ${API_APP_NAME_CI}-testing
+        STREAMLIT_APP_NAME: ${STREAMLIT_APP_NAME_CI}-testing
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      variables:
+        IMAGE_TAG: latest
+        HELM_RELEASE_NAME: ${HELM_RELEASE_NAME_CI}
+        API_APP_NAME: ${API_APP_NAME_CI}
+        STREAMLIT_APP_NAME: ${STREAMLIT_APP_NAME_CI}
+
+test-api:
+  stage: e2e
+  needs: [deploy-on-aap]
+  image: # TODO: image
+  variables:
+    # required for AAP invoker
+    PLATFORM: AAP-POD
+  script:  
+    # wait 60 seconds to give API pod time to download model from S3
+    - sleep 60
+    - grep "python-aapy==" ./api/requirements.txt | xargs pip install
+    - echo "Testing API endpoints for api-${API_APP_NAME} running on ${NAMESPACE}"
+    - PYTHONPATH=. python ./api/call_endpoint.py --local=False
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      variables:
+        API_APP_NAME: ${API_APP_NAME_CI}-testing
+        STREAMLIT_APP_NAME: ${STREAMLIT_APP_NAME_CI}-testing
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      variables:
+        API_APP_NAME: ${API_APP_NAME_CI}
+        STREAMLIT_APP_NAME: ${STREAMLIT_APP_NAME_CI}
+
+cleanup:
+  stage: cleanup
+  needs: [deploy-on-aap, test-api]
+  extends: .deploy_on_aap
+  image: # TODO: image
+  script:
+    - helm uninstall ${HELM_RELEASE_NAME} -n ${NAMESPACE}
+    - echo "Uninstalled ${HELM_RELEASE_NAME} including ${API_APP_NAME} and ${STREAMLIT_APP_NAME} on ${NAMESPACE}"
+  variables:
+    # required in .deploy_on_aap
+    AAP_NAMESPACE: ${NAMESPACE} 
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: always
+      variables:
+        HELM_RELEASE_NAME: ${HELM_RELEASE_NAME_CI}-testing
+        API_APP_NAME: ${API_APP_NAME_CI}-testing
+        STREAMLIT_APP_NAME: ${STREAMLIT_APP_NAME_CI}-testing
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: never

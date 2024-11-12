@@ -1,0 +1,28 @@
+[project]
+name = "devops-course" # Let op, name moet PEP508 compliant zijn
+version = "0.0.1"
+dependencies = [
+    "python-aapy",
+    "fastapi",
+    "gliner",
+    "oauthlib",
+    "pytest",
+    "pytest-playwright",
+    "requests",
+    "ruff",
+    "uvicorn",
+    "streamlit",
+    "streamlit-tags"
+]
+
+[project.optional-dependencies]
+dev = ["pip-tools"]
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E4", "E501", "E7", "E9", "F", "I"]
+
+[tool.setuptools]
+py-modules = []

@@ -1,0 +1,48 @@
+---
+kind: VirtualService
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: api-docs-{{ .Values.name }}
+spec:
+  gateways:
+    - gui-gateway
+  hosts:
+    - "{{ .Values.name }}.{{ .Values.namespace }}.gui.{{ .Values.global.suffix_url }}"
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: api-{{ .Values.name }}
+            port:
+              number: {{ .Values.port }}
+      timeout: 30s
+
+---
+kind: VirtualService
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: api-docs-{{ .Values.name }}-legacy
+spec:
+  gateways:
+    - gui/gui-gateway
+  hosts:
+    - gui.{{ .Values.global.suffix_url }}
+  http:
+    - match:
+        - uri:
+            prefix: /{{ .Values.global.namespace }}/{{ .Values.name }}/
+      rewrite:
+        uri: /
+      route:
+        - destination:
+            host: api-{{ .Values.name }}
+            port:
+              number: {{ .Values.port }}
+      timeout: 30s
+    - match:
+        - uri:
+            exact: /{{ .Values.global.namespace }}/{{ .Values.name }}
+      redirect:
+        uri: /{{ .Values.global.namespace }}/{{ .Values.name }}/

@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-course-streamlit-manual
+  labels:
+    app: streamlit-devops-course
+spec:
+  selector:
+    matchLabels:
+      app: streamlit-devops-course
+  template:
+    metadata:
+      labels:
+        app: streamlit-devops-course
+    spec:
+      containers:
+      - name: streamlit
+        image: # TODO: image
+        command:
+          - "/bin/sh"
+          - "-c"
+        args:
+          - python -m streamlit run streamlit/main/app.py --server.address 0.0.0.0 --server.port 8080
+        resources:
+          limits:
+            memory: "3Gi"
+            cpu: "1"
+        ports:
+          - containerPort: 9000
+        env:
+          - name: P_DEVOPS_WORKSHOP_KEYCLOAK_SECRET # TODO: put secrets on namespace
+            valueFrom:
+              secretKeyRef:
+                key: secret
+                name: keycloak-p-devops-workshop
+          - name: P_DEVOPS_WORKSHOP_KEYCLOAK_ID
+            valueFrom:
+              secretKeyRef:
+                key: id
+                name: keycloak-p-devops-workshop
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: s3-credentials
+                key: AWS_ACCESS_KEY_ID
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: s3-credentials
+                key: AWS_SECRET_ACCESS_KEY
+          - name: API_APP_NAME
+            value: devops-course-api-manual
+          - name: NAMESPACE
+            value: p-devops-workshop
+          - name: PLATFORM
+            value: AAP-POD

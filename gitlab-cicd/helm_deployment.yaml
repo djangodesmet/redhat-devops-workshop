@@ -1,0 +1,17 @@
+---
+.helm_deployment:
+  script:
+    - |
+      # replace forbidden characters with dashes
+      IMAGE_TAG=$(echo ${IMAGE_TAG} | sed 's/[^a-zA-Z0-9\-]/-/g')
+    - |
+      # substitute env variables in all values and chart files
+      echo "Installing gettext-base package."
+      sudo apt update && sudo apt install gettext-base
+      echo "Running env substitution script."
+      . ./gitlab-cicd/substitute_env_vars.sh
+    - |  
+      # deploy on kubernetes with helm 
+      helm upgrade --install ${HELM_RELEASE_NAME} ${CI_PROJECT_DIR}/helm-deployments/ -n ${NAMESPACE} --wait --wait-for-jobs --timeout=10m -f ${CI_PROJECT_DIR}/helm-deployments/values.yaml
+      kubectl rollout status deployment api-${API_APP_NAME} -n ${NAMESPACE}
+      kubectl rollout status deployment app-${STREAMLIT_APP_NAME} -n ${NAMESPACE}

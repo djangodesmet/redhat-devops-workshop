@@ -1,0 +1,38 @@
+kind: VirtualService
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: api-virtualservice-manual
+  labels:
+    app: api-devops-course
+spec:
+  gateways:
+    - api-gateway
+  hosts:
+    - # TODO: url
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: api-service-manual
+            port:
+              number: 9000
+      timeout: 60s
+      corsPolicy:
+        allowOrigins:
+          []
+        allowMethods:
+          - POST
+          - GET
+          - PUT
+          - DELETE
+          - OPTIONS
+          - HEAD
+          - CONNECT
+          - PATCH
+        allowCredentials: true
+        allowHeaders:
+          - Content-Type
+          - Authorization
+        maxAge: "24h"

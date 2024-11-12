@@ -1,0 +1,77 @@
+---
+kind: VirtualService
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: api-{{ .Values.name }}
+spec:
+  gateways:
+    - api-gateway
+  hosts:
+    - "{{ .Values.name }}.{{ .Values.global.namespace }}.api.{{ .Values.global.suffix_url }}"
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: api-{{ .Values.name }}
+            port:
+              number: {{ .Values.port }}
+      timeout: 30s
+      corsPolicy:
+        allowOrigins:
+          {{ .Values.cors_origins | toYaml | indent 10 | trim }}
+        allowMethods:
+          - POST
+          - GET
+          - PUT
+          - DELETE
+          - OPTIONS
+          - HEAD
+          - CONNECT
+          - PATCH
+        allowCredentials: true
+        allowHeaders:
+          - Content-Type
+          - Authorization
+        maxAge: "24h"
+
+---
+kind: VirtualService
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: api-{{ .Values.name }}-legacy
+spec:
+  gateways:
+    - api/seldon-gateway
+  hosts:
+    - api.{{ .Values.global.suffix_url }}
+  http:
+    - match:
+        - uri:
+            prefix: /{{ .Values.global.namespace }}/{{ .Values.name }}/
+      rewrite:
+        uri: /
+      route:
+        - destination:
+            host: api-{{ .Values.name }}
+            port:
+              number: {{ .Values.port }}
+      timeout: 30s
+      corsPolicy:
+        allowOrigins:
+          {{ .Values.cors_origins | toYaml | indent 10 | trim }}
+        allowMethods:
+          - POST
+          - GET
+          - PUT
+          - DELETE
+          - OPTIONS
+          - HEAD
+          - CONNECT
+          - PATCH
+        allowCredentials: true
+        allowHeaders:
+          - Content-Type
+          - Authorization
+        maxAge: "24h"

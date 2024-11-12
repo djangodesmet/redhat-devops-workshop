@@ -1,0 +1,86 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-{{ .Values.name }}
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  selector:
+    matchLabels:
+      app: app-{{ .Values.name }}
+  template:
+    metadata:
+      labels:
+        app: app-{{ .Values.name }}
+      annotations:
+        rollme: {{ randAlphaNum 5 | quote }}
+    spec:
+      {{ if .Values.global.autoscaling }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - app-{{ .Values.name }}
+                topologyKey: topology.kubernetes.io/zone
+      {{ end }}
+      containers:
+        - name: gui
+          image: {{ required "A custom image is required" (tpl .Values.image .) }}
+          imagePullPolicy: Always
+          command:
+            - "/bin/sh"
+            - "-c"
+          args:
+            {{ range .Values.arguments }}
+            - {{ . }}
+            {{ end }}
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: s3-credentials
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: s3-credentials
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: {{ replace "-" "_" (upper .Values.global.namespace) }}_KEYCLOAK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: secret
+                  name: keycloak-{{ .Values.global.namespace }}
+            - name: {{ replace "-" "_" (upper .Values.global.namespace) }}_KEYCLOAK_ID
+              valueFrom:
+                secretKeyRef:
+                  key: id
+                  name: keycloak-{{ .Values.global.namespace }}
+            {{ if (gt (len $.Values.env_vars) 0) }}
+            {{ range .Values.env_vars }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{ end }}
+            {{ end }}
+            {{ if (gt (len $.Values.global.secrets) 0) }}
+            {{ range .Values.global.secrets }}
+            - name: {{ .name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .secret }}
+                  key: {{ .key }}
+            {{ end }}
+            {{ end }}
+          resources:
+            limits:
+              memory: {{ .Values.memory | quote }}
+              cpu: {{ .Values.cpu | quote }}
+            requests:
+              memory: {{ .Values.memory | quote }}
+              cpu: {{ divf (.Values.cpu | float64) 2.0 | quote }}

@@ -1,0 +1,40 @@
+global:
+  # Namespace to deploy the applications in
+  namespace: $NAMESPACE
+  # Environment, don't change this
+  env: prod
+  # Suffix, don't change this
+  suffix_url: # TODO: suffix
+
+  # List of email addresses of users who are allowed to view your dashboard or GUI application
+  viewers: []
+
+  # List of roles of users who are allowed to view your dashboard or GUI application
+  groups: []
+
+  # A map of environment variables to mount
+  env_vars:
+    - name: NAMESPACE
+      value: $NAMESPACE
+
+  # A map of secrets to mount as environment variables
+  secrets: {}
+    # - name: env-name
+    #   secret: secret-name
+    #   key: secret-key
+
+  # Whether autoscaling is enabled
+  autoscaling: false
+
+  # Whether a namespace is an inference namespace
+  isInferenceNamespace: true
+
+  # The web origins that are allowed to perform CORS requests to your API
+  # If you use the Aapp Store, these are set to the redirect URI domains of your inference project.
+  # The format should be a list of StringMatch objects (https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch).
+  cors_origins: []
+
+$API_APP_NAME:
+  enabled: true
+$STREAMLIT_APP_NAME:
+  enabled: true

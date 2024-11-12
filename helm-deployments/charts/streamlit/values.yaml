@@ -1,0 +1,23 @@
+# Application name
+name: $STREAMLIT_APP_NAME
+# Application image
+image: # TODO: image
+# Number of CPUs
+cpu: "0.5"
+# Amount of memory needed
+memory: 1Gi 
+# Use GPU or not
+attach_gpu: false
+# Port to use
+port: 8080
+# A map of environment variables to mount
+env_vars: 
+  - name: API_APP_NAME
+    value: $API_APP_NAME
+  - name: NAMESPACE
+    value: $NAMESPACE
+  - name: PLATFORM
+    value: AAP-POD
+
+arguments:
+  - python -m streamlit run streamlit/main/app.py --server.address 0.0.0.0 --server.port 8080

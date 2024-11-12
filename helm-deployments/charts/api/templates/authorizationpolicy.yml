@@ -1,0 +1,64 @@
+---
+{{ if .Values.global.isInferenceNamespace }}
+{{ if or (gt (len .Values.global.viewers) 0) (gt (len .Values.global.groups) 0) }}
+kind: AuthorizationPolicy
+apiVersion: security.istio.io/v1beta1
+metadata:
+  # Change this to something sensible for your application
+  name: allow-to-api-{{ .Values.name }}
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      # Use the same app label as your Deployment
+      app: api-{{ .Values.name }}
+  rules:
+    {{- if gt (len .Values.global.viewers) 0 }}
+    - when:
+        - key: "request.auth.claims[email]"
+          values:
+            {{ range .Values.global.viewers }}
+            - {{.}}
+            {{ end }}
+    {{ end }}
+    {{- if gt (len .Values.global.groups) 0 }}
+    - when:
+        - key: "request.auth.claims[roles]"
+          values:
+            {{- range .Values.global.groups }}
+            - {{.}}
+            {{ end }}
+    {{ end }}
+
+---
+kind: AuthorizationPolicy
+apiVersion: security.istio.io/v1beta1
+metadata:
+  # Change this to something sensible for your application
+  name: allow-to-api-{{ .Values.name }}-gui
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      # Use the same app label as your Deployment
+      app: api-{{ .Values.name }}
+  rules:
+    {{- if gt (len .Values.global.viewers) 0 }}
+    - when:
+        - key: "request.headers[x-auth-request-email]"
+          values:
+            {{ range .Values.global.viewers }}
+            - {{.}}
+            {{ end }}
+    {{ end }}
+    {{- if gt (len .Values.global.groups) 0 }}
+    {{- range .Values.global.groups }}
+    - when:
+        - key: "request.headers[{{.}}]"
+          values:
+            - "true"
+    {{ end }}
+    {{ end }}
+
+{{ end }}
+{{ end }}

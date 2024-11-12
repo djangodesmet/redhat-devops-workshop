@@ -1,0 +1,16 @@
+# Application name
+name: $API_APP_NAME
+# Application image
+image: # TODO: image
+# Number of CPUs
+cpu: "1"
+# Amount of memory needed
+memory: 6Gi 
+# Use GPU or not
+attach_gpu: false
+# Port to use
+port: 9000
+
+arguments:
+  - . # TODO: download model from s3
+    python ./api/api.py

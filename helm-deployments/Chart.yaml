@@ -1,0 +1,26 @@
+apiVersion: v2
+name: azure-ai
+description: A Helm chart for this devops course which contains both an API and a Streamlit GUI to deploy.
+# A chart can be either an 'application' or a 'library' chart.
+#
+# Application charts are a collection of templates that can be packaged into versioned archives
+# to be deployed.
+#
+# Library charts provide useful utilities or functions for the chart developer. They're included as
+# a dependency of application charts to inject those utilities and functions into the rendering
+# pipeline. Library charts do not define any templates and therefore cannot be deployed.
+type: application
+
+# This is the chart version. This version number should be incremented each time you make changes
+# to the chart and its templates.
+version: 0.1.0
+appVersion: 1.0.0
+dependencies:
+  - name: $API_APP_NAME
+    version: "0.1.1"
+    repository: "file://./charts/api"
+    condition: $API_APP_NAME.enabled
+  - name: $STREAMLIT_APP_NAME
+    version: "0.1.0"
+    repository: "file://./charts/streamlit"
+    condition: $STREAMLIT_APP_NAME.enabled
