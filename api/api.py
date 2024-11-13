@@ -13,14 +13,13 @@ from pydantic import BaseModel
 async def lifespan(app: FastAPI): # TODO: download model from s3 to local
     model_path = "./models"
     try:
-        # model = GLiNER.from_pretrained(
-        #     model_path,
-        #     load_onnx_model=True,
-        #     onnx_model_file="onnx/model_q4.onnx",
-        #     load_tokenizer=True,
-        #     local_files_only=True,
-        # )
-        model = GLiNER.from_pretrained("onnx-community/gliner_multi-v2.1", cache_dir="./huggingface", load_onnx_model=True, onnx_model_file="onnx/model.onnx")
+        model = GLiNER.from_pretrained(
+            "./models",
+            load_onnx_model=True,
+            onnx_model_file="onnx/model.onnx",
+            load_tokenizer=True,
+            local_files_only=True,
+        )
     except HFValidationError as e:
         logging.error(
             f"Model not found in {model_path}. Make sure the model is downloaded."

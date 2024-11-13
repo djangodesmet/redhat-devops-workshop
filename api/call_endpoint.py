@@ -25,10 +25,11 @@ def main(local: bool = False):
         # lokaal volstaat het om met requests een post te doen omdat we hier geen token
         # op moeten halen om een call naar de API te kunnen doen.
         response = requests.post(
-            verify=False, url=f"http://127.0.0.1:8000/{endpoint}", data=json.dumps(data)
+            verify=False, url=f"http://127.0.0.1:9000/{endpoint}", data=json.dumps(data)
         ).json()
     else:
         raise NotImplementedError
+    logging.info(f"Response from /{endpoint} endpoint: {response}")
 
 
 if __name__ == "__main__":
