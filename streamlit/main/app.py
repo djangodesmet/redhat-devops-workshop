@@ -355,6 +355,7 @@ class App:
                 data=json.dumps(data),
             ).json()
         else:
+            st.write(os.getenv("REMOTE"))
             endpoint = "https://gliner-test-devops-workshop.apps.rosa.rosa-jxx8z.wlcq.p3.openshiftapps.com/v2/models/gliner-test/infer"
             token = os.getenv("SVA_TOKEN")
             headers = {'Authorization': f'Bearer {token}'}
