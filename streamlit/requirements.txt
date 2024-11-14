@@ -76,8 +76,6 @@ pydeck==0.9.1
     # via streamlit
 pygments==2.18.0
     # via rich
-python-aapy==2.0.3
-    # via -r streamlit/requirements.in
 python-dateutil==2.9.0.post0
     # via pandas
 python-dotenv==1.0.1

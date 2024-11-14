@@ -3,7 +3,6 @@ import logging
 import os
 
 import requests
-from aapy import AAPInvoker
 from streamlit_tags import st_tags
 
 import streamlit as st
@@ -33,12 +32,7 @@ class App:
                 data=json.dumps(data),
             ).json()
         else:
-            invoker = AAPInvoker(
-                name_of_api=os.getenv("API_APP_NAME"),
-                namespace=os.getenv("NAMESPACE"),
-                platform=os.getenv("PLATFORM"),
-            )
-            response = invoker.post_request(data, endpoint)["content"]
+            raise NotImplementedError
 
         return response["entities"]
 
