@@ -2,7 +2,6 @@
 name = "devops-course" # Let op, name moet PEP508 compliant zijn
 version = "0.0.1"
 dependencies = [
-    "python-aapy",
     "fastapi",
     "gliner",
     "oauthlib",
