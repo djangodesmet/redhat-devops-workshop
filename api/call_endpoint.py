@@ -1,7 +1,6 @@
 import argparse
 import json
 import logging
-import os
 
 import requests
 from urllib3 import disable_warnings
