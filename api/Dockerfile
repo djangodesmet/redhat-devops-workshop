@@ -13,3 +13,5 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Transfer the api folder to the docker image
 COPY ./api ./api
+
+CMD ["python", "./api/api.py"]
