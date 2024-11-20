@@ -1,8 +1,8 @@
 # Use the image below with all packages pre-installed to speedup the build
-FROM # TODO: use correct base image
+FROM python:3
 
 # Set the working directory from which the next commands are executed
-WORKDIR # TODO: set correct working dir
+WORKDIR .
 
 # Transfer the requirement file first to allow layered caching
 COPY ./api/requirements.txt ./api/requirements.txt
@@ -13,8 +13,3 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Transfer the api folder to the docker image
 COPY ./api ./api
-
-# Enable all permissions in the image, later needed to download the model folder
-USER root # TODO: check if this is needed
-RUN  chmod 777 .
-USER 1000
