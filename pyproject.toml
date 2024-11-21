@@ -3,7 +3,11 @@ name = "devops-course" # Let op, name moet PEP508 compliant zijn
 version = "0.0.1"
 dependencies = [
     "streamlit",
-    "streamlit-tags"
+    "streamlit-tags",
+    "fastapi",
+    "uvicorn",
+    "boto3",
+    "gliner"
 ]
 
 [project.optional-dependencies]

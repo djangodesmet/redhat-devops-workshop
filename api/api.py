@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 # load model on startup of API
 @asynccontextmanager
-async def lifespan(app: FastAPI): # TODO: download model from s3 to local
+async def lifespan(app: FastAPI):  # TODO: download model from s3 to local
     model_path = "./models"
     try:
         model = GLiNER.from_pretrained(

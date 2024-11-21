@@ -1,10 +1,13 @@
 import argparse
 import json
 import logging
+import os
 
 import requests
 from urllib3 import disable_warnings
 from urllib3.exceptions import InsecureRequestWarning
+
+from .get_example_data import get_data
 
 disable_warnings(category=InsecureRequestWarning)
 
@@ -27,7 +30,11 @@ def main(local: bool = False):
             verify=False, url=f"http://127.0.0.1:9000/{endpoint}", data=json.dumps(data)
         ).json()
     else:
-        raise NotImplementedError
+        data = get_data()
+        endpoint = os.getenv("ENDPOINT", "https://gliner-multi-my-data-science-project.apps.rosa.rosa-jxx8z.wlcq.p3.openshiftapps.com/v2/models/gliner-multi/infer")
+        token = os.getenv("TOKEN")
+        headers = {"Authorization": f"Bearer {token}"}
+        response = requests.post(endpoint, json=data, headers=headers).json()
     logging.info(f"Response from /{endpoint} endpoint: {response}")
 
 

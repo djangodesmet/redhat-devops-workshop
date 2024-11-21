@@ -17,7 +17,7 @@ def download_s3_folder(s3_folder: str, local_dir: str):
         aws_access_key_id=s3_access_key,
         aws_secret_access_key=s3_secret_key,
         endpoint_url=s3_endpoint_url,
-        region_name="eu-central-1"
+        region_name="eu-central-1",
     )
 
     # Ensure the local directory exists
@@ -45,10 +45,9 @@ def download_s3_folder(s3_folder: str, local_dir: str):
                 s3_client.download_file(s3_bucket_name, s3_key, local_file_path)
 
 
-# Usage example
-s3_folder = (
-    "onnx-community/gliner_multi-v2.1"  # The folder path in S3, e.g., 'data/folder1/'
-)
-local_dir = "models/"  # Local path to save the files
+if __name__ == "__main__":
+    # Usage example
+    s3_folder = "onnx-community/gliner_multi-v2.1"  # The folder path in S3
+    local_dir = "models/"  # Local path to save the files
 
-download_s3_folder(s3_folder, local_dir)
+    download_s3_folder(s3_folder, local_dir)
