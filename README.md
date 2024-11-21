@@ -69,3 +69,5 @@ The only thing that is needed in this repository to deploy the streamlit applica
 In order to deploy the application, go to the OpenShift console and make sure you are on the `Developer` view. From there click `+Add` and choose `Import from Git`. Paste the https git clone url into the field. Under the advanced git options you can optionally specify which branch to build from. Under `Build` and advanced build options, add an environment variable from Secret. Select `default-name-multi-model-server-sa` and then `token` and name it `SVA_TOKEN`. Add another environment variable and call it `REMOTE` and give it the value `True`. Add another environment variable and call it `ENDPOINT` and paste the inference endpoint into the value field.
 
 Under `Deploy` and `Resource type` choose `Deployment`. Set `Target port` to 8080. 
+
+Click deploy and wait a few minutes for the application to start running. You can get the url for the application by clicking on `Topology` and clicking on the deployment. The url is under the `Routes` section.
