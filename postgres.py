@@ -4,7 +4,7 @@ import psycopg2
 db_config = {
     "dbname": "sampledb",
     "user": "user",
-    "password": "",
+    "password": "test",
     "host": "postgresql.my-data-science-project.svc.cluster.local",
     "port": "5432",  # Default is '5432'
 }
