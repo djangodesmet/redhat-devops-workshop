@@ -31,7 +31,13 @@ def main(local: bool = False):
         ).json()
     else:
         data = get_data()
-        endpoint = os.getenv("ENDPOINT", "https://gliner-multi-my-data-science-project.apps.rosa.rosa-jxx8z.wlcq.p3.openshiftapps.com/v2/models/gliner-multi/infer")
+        endpoint = os.getenv(
+            "ENDPOINT",
+            (
+                "https://gliner-multi-my-data-science-project.apps."
+                "rosa.rosa-jxx8z.wlcq.p3.openshiftapps.com/v2/models/gliner-multi/infer"
+            ),
+        )
         token = os.getenv("TOKEN")
         headers = {"Authorization": f"Bearer {token}"}
         response = requests.post(endpoint, json=data, headers=headers).json()
