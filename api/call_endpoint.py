@@ -4,9 +4,10 @@ import logging
 import os
 
 import requests
-from aapy import AAPInvoker # TODO: do not use aapy package
 from urllib3 import disable_warnings
 from urllib3.exceptions import InsecureRequestWarning
+
+from .get_example_data import get_data
 
 disable_warnings(category=InsecureRequestWarning)
 
@@ -29,19 +30,17 @@ def main(local: bool = False):
             verify=False, url=f"http://127.0.0.1:9000/{endpoint}", data=json.dumps(data)
         ).json()
     else:
-        if (namespace := os.getenv("NAMESPACE", None)) is None:
-            raise RuntimeError(
-                "You are trying to call an inference API without specifying namespace."
-            )
-        # remote gebruiken we de AAPInvoker class om een call te doen naar de API
-        # in een inference omdat we hier een token voor nodig hebben. Dit gebeurt in
-        # onder water in het AAPInvoker object.
-        invoker = AAPInvoker(
-            name_of_api=os.getenv("API_APP_NAME"),
-            namespace=namespace,
-            platform=os.getenv("PLATFORM", "AAP"),
+        data = get_data()
+        endpoint = os.getenv(
+            "ENDPOINT",
+            (
+                "https://gliner-multi-my-data-science-project.apps."
+                "rosa.rosa-jxx8z.wlcq.p3.openshiftapps.com/v2/models/gliner-multi/infer"
+            ),
         )
-        response = invoker.post_request(data, endpoint)
+        token = os.getenv("TOKEN")
+        headers = {"Authorization": f"Bearer {token}"}
+        response = requests.post(endpoint, json=data, headers=headers).json()
     logging.info(f"Response from /{endpoint} endpoint: {response}")
 
 

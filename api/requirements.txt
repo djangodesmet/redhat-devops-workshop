@@ -140,8 +140,6 @@ pydantic-core==2.20.1
     # via pydantic
 pygments==2.18.0
     # via rich
-python-aapy==2.0.3
-    # via -r api/requirements.in
 python-dotenv==1.0.1
     # via
     #   python-aapy

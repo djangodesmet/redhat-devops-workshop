@@ -1,0 +1,9 @@
+FROM quay.io/modh/codeserver:codeserver-ubi9-python-3.9-2024a-20240628-ac07414
+
+RUN pip install pip==22.3.1 setuptools==65.3.0
+
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+USER 0
+RUN yum install nano -y
+USER 1001

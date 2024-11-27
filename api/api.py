@@ -10,13 +10,13 @@ from pydantic import BaseModel
 
 # load model on startup of API
 @asynccontextmanager
-async def lifespan(app: FastAPI): # TODO: download model from s3 to local
-    model_path = "./models/onnx-community/gliner_multi-v2.1"
+async def lifespan(app: FastAPI):  # TODO: download model from s3 to local
+    model_path = "./models"
     try:
         model = GLiNER.from_pretrained(
-            model_path,
+            "./models",
             load_onnx_model=True,
-            onnx_model_file="onnx/model_q4.onnx",
+            onnx_model_file="onnx/model.onnx",
             load_tokenizer=True,
             local_files_only=True,
         )
